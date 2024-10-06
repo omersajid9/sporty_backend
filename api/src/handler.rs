@@ -187,7 +187,7 @@ pub async fn create_player_sport(
                     .await;
 
                     match rating {
-                        Ok(rating) => {
+                        Ok(_) => {
                             let player_sport_response = json!({"status": "success", "data": "player_sport and rating added successfully"});
                             return Ok((StatusCode::CREATED, Json(player_sport_response)));
                         },
