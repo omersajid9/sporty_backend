@@ -1,8 +1,8 @@
 -- Add down migration script here
 
 -- drop table if exists player_score;
--- drop table if exists player_game;
--- drop table if exists game;
+drop table if exists player_game;
+drop table if exists game;
 drop table if exists rating;
 drop table if exists player_sport;
 drop table if exists sport;

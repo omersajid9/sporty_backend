@@ -1,5 +1,6 @@
 -- Add up migration script here
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS postgis;
 
 create table
 if not exists player (
@@ -7,6 +8,7 @@ if not exists player (
     username varchar(50) unique not null,
     password text not null,
     date_of_birth date not null,
+    -- location
     profile_picture text
 );
 
@@ -40,6 +42,33 @@ if not exists rating (
     constraint fk_player_sport foreign key (player_sport_id) references player_sport(id) on delete cascade,
     updated timestamp not null default current_timestamp
 );
+
+
+create table
+if not exists game (
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
+    sport_id UUID not null,
+    host_id UUID not null,
+    lat double precision not null,
+    lon double precision not null,
+    time timestamp not null default current_timestamp,
+    constraint fk_sport foreign key (sport_id) references sport(id) on delete cascade,
+    constraint fk_host foreign key (host_id) references player(id) on delete cascade
+);
+
+
+-- CREATE TYPE player_game_rsvp AS ENUM ('Maybe', 'Yes', 'No');
+
+create table
+if not exists player_game (
+    game_id UUID not null,
+    player_id UUID not null,
+    rsvp player_game_rsvp not null default 'Maybe',
+    primary key (game_id, player_id),
+    constraint fk_game foreign key (game_id) references game(id) on delete cascade,
+    constraint fk_player foreign key (player_id) references player(id) on delete cascade
+);
+
 
 
 -- create type

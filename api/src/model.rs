@@ -40,6 +40,18 @@ pub struct Rating {
     pub updated: chrono::NaiveDate,
 }
 
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[allow(non_snake_case)]
+pub struct Game {
+    pub id: Uuid,
+    pub sport_id: Uuid,
+    pub host_id: Uuid,
+    pub lat: f64,
+    pub lon: f64,
+    pub time: chrono::NaiveDateTime,
+}
+
+
 // create table
 // if not exists player (
 //     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
