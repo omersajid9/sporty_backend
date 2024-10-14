@@ -5,6 +5,8 @@ use serde::{
 use sqlx::FromRow;
 use uuid::Uuid;
 
+use crate::schema::Rsvp;
+
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
 pub struct Player {
@@ -19,8 +21,31 @@ pub struct Player {
 #[allow(non_snake_case)]
 pub struct Sport {
     pub id: Uuid,
-    pub name: String
+    pub name: String,
+    pub key: String,
+    pub icon: String
 }
+
+#[derive(Debug, FromRow, Deserialize, Serialize, Clone)]
+#[allow(non_snake_case)]
+pub struct GetGames {
+    pub sport: String,
+    pub date: Option<chrono::NaiveDate>,
+    pub username: String
+}
+
+
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[allow(non_snake_case)]
+pub struct GameData {
+    pub id: Uuid,
+    pub username: String,
+    pub sport: String,
+    pub lat: f64,
+    pub lon: f64,
+    pub time: chrono::NaiveDateTime,
+}
+
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
@@ -49,7 +74,21 @@ pub struct Game {
     pub lat: f64,
     pub lon: f64,
     pub time: chrono::NaiveDateTime,
+    pub public: bool
 }
+
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[allow(non_snake_case)]
+pub struct PlayerGame {
+    pub game_id: Uuid,
+    pub player_id: Uuid,
+    pub player_rsvp: Rsvp,
+    pub host_rsvp: Rsvp
+}
+
+// game_id UUID not null,
+// player_id UUID not null,
+// rsvp player_game_rsvp not null default 'Maybe',
 
 
 // create table

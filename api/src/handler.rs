@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
-use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
+use axum::{extract::{Path, State}, http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
+use sqlx::{Postgres, QueryBuilder};
 use uuid::Uuid;
 
-use crate::{model::{Game, Player, PlayerSport, Rating, Sport}, schema::{CreateGame, CreatePlayer, CreatePlayerSport, DeleteGame, DeletePlayer, DeletePlayerSport, EditGame, EditPlayer}, AppState};
+use crate::{model::{Game, GameData, GetGames, Player, PlayerSport, Rating, Sport}, schema::{CreateGame, CreateGamePlayer, CreatePlayer, CreatePlayerSport, DeleteGame, DeletePlayer, DeletePlayerSport, EditGame, EditPlayer, Rsvp}, AppState};
 
 pub async fn health_checker() -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     const MESSAGE: &str = "Simple CRUD API with Rust, SQLX, Postgres,and Axum";
@@ -16,6 +17,22 @@ pub async fn health_checker() -> Result<impl IntoResponse, (StatusCode, Json<ser
 
     Ok((StatusCode::CREATED, Json(json_response)))
 }
+
+// SPORT 
+
+pub async fn get_sports_all
+    (
+        State(data): State<Arc<AppState>>,
+    ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+
+        let sports = sqlx::query_as!(
+            Sport,
+            "SELECT * FROM sport"
+        ).fetch_all(&data.db)
+        .await
+        .unwrap();
+        Ok((StatusCode::OK, Json(json!({"status": "success", "data": json!({"sports": sports})}))))
+    }
 
 // USER
 
@@ -276,6 +293,61 @@ pub async fn update_player_rating(
 
 // Game
 
+pub async fn get_game(
+    Path(id): Path<Uuid>,
+    State(data): State<Arc<AppState>>,
+)-> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let game = sqlx::query_as!(
+        GameData, 
+        "SELECT g.id, p.username, s.name as sport, g.lat, g.lon, g.time FROM game g
+         INNER JOIN player p ON g.host_id = p.id
+         INNER JOIN sport s ON g.sport_id = s.id
+         WHERE g.id = $1",
+         id
+    )
+    .fetch_one(&data.db)
+    .await
+    .unwrap();
+    Ok((StatusCode::OK, Json(json!({"status": "success", "data": json!({"game": game})}))))
+}
+
+pub async fn get_games(
+    State(data): State<Arc<AppState>>,
+    axum::extract::Query(body): axum::extract::Query<GetGames>
+)-> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+
+    let player = sqlx::query_as!(
+        Player,
+        "SELECT * FROM player WHERE username = $1",
+        body.username.to_string()
+    )
+    .fetch_one(&data.db)
+    .await
+    .unwrap();
+
+    let mut query: QueryBuilder<Postgres> = QueryBuilder::new(
+        "SELECT g.id, p.username, s.name as sport, g.lat, g.lon, g.time
+         FROM game g
+         INNER JOIN player p ON g.host_id = p.id
+         INNER JOIN sport s ON g.sport_id = s.id
+         ");
+        
+    query.push(" WHERE g.id NOT IN (SELECT game_id FROM player_game WHERE player_id = ").push_bind(player.id);
+    query.push(")");
+    query.push(" AND g.host_id <> ").push_bind(player.id);
+
+    if body.sport.clone() != "all" {
+        query.push(" AND s.key = ").push_bind(body.sport);
+    };
+
+    if let Some(date) = body.date {
+        query.push(" AND DATE(time) = ").push_bind(date);
+    };
+
+    let games = query.build_query_as::<GameData>().fetch_all(&data.db).await.unwrap();
+    Ok((StatusCode::OK, Json(json!({"status": "success", "data": json!({"games": games})}))))
+}
+
 pub async fn create_game(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<CreateGame>,
@@ -283,7 +355,7 @@ pub async fn create_game(
 
     let sport = sqlx::query_as!(
         Sport, 
-        "SELECT * FROM sport WHERE name = $1",
+        "SELECT * FROM sport WHERE key = $1",
         body.sport.to_string()
     )
     .fetch_one(&data.db)
@@ -304,13 +376,14 @@ pub async fn create_game(
             let game = sqlx::query_as!(
                 Game,
                 "INSERT INTO
-                game (sport_id, host_id, lat, lon, time)
-                VALUES ($1, $2, $3, $4, $5)
+                game (sport_id, host_id, lat, lon, time, public)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 RETURNING *",
                 sport.id,
                 player.id,
                 body.location.latitude, body.location.longitude,
-                body.time
+                body.time,
+                body.public
             ).fetch_one(&data.db)
             .await;
 
@@ -413,6 +486,34 @@ pub async fn delete_game(
 
 
 // player joins game
+
+pub async fn player_game_rsvp(
+    State(data): State<Arc<AppState>>,
+    axum::extract::Json(body): axum::extract::Json<CreateGamePlayer>,
+)-> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let player = sqlx::query_as!(
+        Player,
+        "SELECT * FROM player WHERE username = $1",
+        body.player_username.to_string()
+    ).fetch_one(&data.db)
+    .await
+    .unwrap();
+
+    let _ = sqlx::query_as!(
+        PlayerGame,
+        "INSERT INTO
+        player_game (game_id, player_id, player_rsvp)
+        VALUES ($1, $2, $3)
+        ",
+        body.game_id,
+        player.id,
+        body.player_rsvp as Rsvp
+    ).execute(&data.db)
+    .await
+    .unwrap();
+
+    Ok((StatusCode::OK, Json(json!({"status": "success","message": "rsvp recorded successfully"}))))
+}
 
 // pub async fn join_game(
 //     State(data): State<Arc<AppState>>,

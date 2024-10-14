@@ -1,5 +1,6 @@
 use axum::Router;
 use tokio::net::TcpListener;
+use tower_http::cors::{Any, CorsLayer};
 use std::sync::Arc;
 use dotenv::dotenv;
 use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
@@ -56,5 +57,10 @@ async fn server() -> TcpListener {
 }
 
 fn router(appstate: Arc<AppState>) -> Router {
-    route::create_router(appstate)
+    let cors = CorsLayer::new()
+    .allow_origin(Any)  // Allow any origin for development
+    .allow_methods(Any) // Allow any HTTP method (GET, POST, etc.)
+    .allow_headers(Any); // Allow any headers
+
+    route::create_router(appstate).layer(cors)
 }

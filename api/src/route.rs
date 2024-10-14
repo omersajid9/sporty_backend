@@ -1,13 +1,15 @@
-use axum::{routing::{get, delete, patch}, Router};
+use axum::{routing::{get, delete, patch, post}, Router};
 use std::sync::Arc;
 
-use crate::{handler::{create_game, create_player, create_player_sport, delete_game, delete_player, delete_player_sport, edit_game, edit_player, get_players, health_checker, update_player_rating}, AppState
+use crate::{handler::{create_game, create_player, create_player_sport, delete_game, delete_player, delete_player_sport, edit_game, edit_player, get_game, get_games, get_players, get_sports_all, health_checker, player_game_rsvp, update_player_rating}, AppState
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     Router::new()
         .route("/health_checker", get(health_checker))
         .nest("/player", player_router())
+        .nest("/sport", sport_router())
+        .nest("/player_game", game_player_router())
         .nest("/player_sport", player_sport_router())
         .nest("/rating", rating_router())
         .nest("/game", game_router())
@@ -22,6 +24,11 @@ fn player_router() -> Router<Arc<AppState>> {
         .route("/all", get(get_players))
 }
 
+fn sport_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/all", get(get_sports_all))
+}
+
 fn player_sport_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/create", get(create_player_sport))
@@ -33,9 +40,17 @@ fn rating_router() -> Router<Arc<AppState>> {
         .route("/update", get(update_player_rating))
 }
 
+fn game_player_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/rsvp", post(player_game_rsvp))
+}
+
+
 fn game_router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/create", get(create_game))
+        .route("/all", get(get_games))
+        .route("/:id", get(get_game))
+        .route("/create", post(create_game))
         .route("/edit", patch(edit_game))
         .route("/delete", delete(delete_game))
 }

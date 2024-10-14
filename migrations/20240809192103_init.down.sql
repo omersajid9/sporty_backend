@@ -1,6 +1,7 @@
 -- Add down migration script here
 
 -- drop table if exists player_score;
+drop type player_game_rsvp cascade;
 drop table if exists player_game;
 drop table if exists game;
 drop table if exists rating;

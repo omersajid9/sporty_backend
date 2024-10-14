@@ -46,7 +46,8 @@ pub struct CreateGame {
     pub sport: String,
     pub username: String,
     pub location: Location,
-    pub time: chrono::NaiveDateTime
+    pub time: chrono::NaiveDateTime,
+    pub public: bool
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -63,9 +64,11 @@ pub struct DeleteGame {
     pub username: String
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(sqlx::Type, Debug)]
+#[sqlx(type_name = "player_game_rsvp")] 
+#[derive(Serialize, Deserialize)]
 pub enum Rsvp {
-    Maybe,
+    Pending,
     Yes,
     No
 }
@@ -74,5 +77,6 @@ pub enum Rsvp {
 pub struct CreateGamePlayer {
     pub game_id: Uuid,
     pub player_username: String,
-    pub rsvp: Rsvp
+    pub player_rsvp: Rsvp
 }
+
