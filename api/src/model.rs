@@ -5,8 +5,6 @@ use serde::{
 use sqlx::FromRow;
 use uuid::Uuid;
 
-use crate::schema::Rsvp;
-
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
 pub struct Player {
@@ -25,27 +23,6 @@ pub struct Sport {
     pub key: String,
     pub icon: String
 }
-
-#[derive(Debug, FromRow, Deserialize, Serialize, Clone)]
-#[allow(non_snake_case)]
-pub struct GetGames {
-    pub sport: String,
-    pub date: Option<chrono::NaiveDate>,
-    pub username: String
-}
-
-
-#[derive(Debug, FromRow, Deserialize, Serialize)]
-#[allow(non_snake_case)]
-pub struct GameData {
-    pub id: Uuid,
-    pub username: String,
-    pub sport: String,
-    pub lat: f64,
-    pub lon: f64,
-    pub time: chrono::NaiveDateTime,
-}
-
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
@@ -67,50 +44,40 @@ pub struct Rating {
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
-pub struct Game {
+pub struct Session {
     pub id: Uuid,
     pub sport_id: Uuid,
     pub host_id: Uuid,
     pub lat: f64,
     pub lon: f64,
+    pub public: bool,
+    pub max_players: i64,
     pub time: chrono::NaiveDateTime,
-    pub public: bool
 }
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
-pub struct PlayerGame {
-    pub game_id: Uuid,
+pub struct SessionRsvp {
+    pub session_id: Uuid,
     pub player_id: Uuid,
-    pub player_rsvp: Rsvp,
-    pub host_rsvp: Rsvp
+    pub player_rsvp: String,
+    pub host_rsvp: String
 }
 
-// game_id UUID not null,
-// player_id UUID not null,
-// rsvp player_game_rsvp not null default 'Maybe',
 
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[allow(non_snake_case)]
+pub struct SessionData {
+    pub id: Uuid,
+    pub username: String,
+    pub sport: String,
+    pub lat: f64,
+    pub lon: f64,
+    pub time: chrono::NaiveDateTime,
+}
 
-// create table
-// if not exists player (
-//     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
-//     username varchar(50) unique not null,
-//     password text not null,
-//     date_of_birth date,
-//     profile_picture text
-// );
-
-
-// #[derive(Debug, FromRow, Deserialize, Serialize)]
-// #[allow(non_snake_case)]
-// pub struct NoteModel {
-//     pub id: Uuid,
-//     pub title: String,
-//     pub content: String,
-//     pub category: Option<String>,
-//     pub published: Option<bool>,
-//     #[serde(rename = "createdAt")]
-//     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
-//     #[serde(rename = "updatedAt")]
-//     pub updated_at: Option<chrono::DateTime<chrono::Utc>>
-// }
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[allow(non_snake_case)]
+pub struct Count {
+    pub count: Option<i64>,
+}

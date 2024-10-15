@@ -37,12 +37,11 @@ values ('Pickle Ball', 'pickleball', 'racquetball');
 
 create table
 if not exists player_sport (
-    id UUID NOT NULL DEFAULT (uuid_generate_v4()),
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
     player_id UUID not null,
     sport_id UUID not null,
     constraint fk_player foreign key (player_id) references player(id) on delete cascade,
     constraint fk_sport foreign key (sport_id) references sport(id) on delete cascade,
-    primary key (id),
     unique (player_id, sport_id)
 );
 
@@ -58,27 +57,50 @@ if not exists rating (
 
 
 create table
-if not exists game (
+if not exists session (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
     sport_id UUID not null,
     host_id UUID not null,
     lat double precision not null,
     lon double precision not null,
     public boolean not null default true,
+    max_players int not null default 2,
     time timestamp not null default current_timestamp,
     constraint fk_sport foreign key (sport_id) references sport(id) on delete cascade,
     constraint fk_host foreign key (host_id) references player(id) on delete cascade
 );
 
-create type player_game_rsvp as enum ('Pending', 'Yes', 'No');
+-- create type session_player_rsvp as enum ('Pending', 'Yes', 'No');
 
 create table
-if not exists player_game (
+if not exists session_rsvp (
+    session_id UUID not null,
+    player_id UUID not null,
+    player_rsvp text not null default 'Pending',
+    host_rsvp text not null default 'Pending',
+    primary key (session_id, player_id),
+    constraint fk_session foreign key (session_id) references session(id) on delete cascade,
+    constraint fk_player foreign key (player_id) references player(id) on delete cascade
+);
+
+create table
+if not exists game (
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
+    session_id UUID,
+    player_id_1 UUID not null,
+    player_id_2 UUID not null,
+    constraint fk_session foreign key (session_id) references session(id) on delete cascade,
+    constraint fk_player_1 foreign key (player_id_1) references player(id) on delete cascade,
+    constraint fk_player_2 foreign key (player_id_2) references player(id) on delete cascade
+);
+
+create table
+if not exists score (
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
     game_id UUID not null,
     player_id UUID not null,
-    player_rsvp player_game_rsvp not null default 'Pending',
-    host_rsvp player_game_rsvp not null default 'Pending',
-    primary key (game_id, player_id),
+    score int not null,
+    created_at timestamp not null default current_timestamp,
     constraint fk_game foreign key (game_id) references game(id) on delete cascade,
     constraint fk_player foreign key (player_id) references player(id) on delete cascade
 );

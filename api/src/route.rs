@@ -1,7 +1,7 @@
 use axum::{routing::{get, delete, patch, post}, Router};
 use std::sync::Arc;
 
-use crate::{handler::{create_game, create_player, create_player_sport, delete_game, delete_player, delete_player_sport, edit_game, edit_player, get_game, get_games, get_players, get_sports_all, health_checker, player_game_rsvp, update_player_rating}, AppState
+use crate::{handler::{create_player, create_player_sport, create_session, delete_player, delete_player_sport, delete_session, edit_player, edit_session, get_players, get_session, get_sessions, get_sports_all, health_checker, session_rsvp, update_player_rating}, AppState
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
@@ -42,16 +42,16 @@ fn rating_router() -> Router<Arc<AppState>> {
 
 fn game_player_router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/rsvp", post(player_game_rsvp))
+        .route("/rsvp", post(session_rsvp))
 }
 
 
 fn game_router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/all", get(get_games))
-        .route("/:id", get(get_game))
-        .route("/create", post(create_game))
-        .route("/edit", patch(edit_game))
-        .route("/delete", delete(delete_game))
+        .route("/all", get(get_sessions))
+        .route("/:id", get(get_session))
+        .route("/create", post(create_session))
+        .route("/edit", patch(edit_session))
+        .route("/delete", delete(delete_session))
 }
 
