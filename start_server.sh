@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 # # run postgres server
-# docker-compose up -d;
+docker-compose up -d;
 
 # # wait for postgres server to start
-# sleep 1;
+sleep 1;
 
 # run migrations
 sqlx migrate run;
