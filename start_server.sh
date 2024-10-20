@@ -15,4 +15,4 @@ cd api;
 cargo check;
 
 #run server
-cargo watch -c -x run;
+cargo run;
