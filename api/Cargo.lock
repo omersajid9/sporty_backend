@@ -62,6 +62,7 @@ dependencies = [
  "jsonwebtoken",
  "serde",
  "serde_json",
+ "skillratings",
  "sqlx",
  "tokio",
  "tower-http",
@@ -1826,6 +1827,12 @@ dependencies = [
  "thiserror",
  "time",
 ]
+
+[[package]]
+name = "skillratings"
+version = "0.27.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53c8196a815d27d6dbd2439058a2cbf6597a549a68ca6368611df240df7c2987"
 
 [[package]]
 name = "slab"
