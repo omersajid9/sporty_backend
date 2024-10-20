@@ -407,7 +407,7 @@ pub async fn get_sessions(
         
         .push(" AND earth_distance(
         ll_to_earth(ses.lat, ses.lon), 
-        ll_to_earth(").push_bind(body.lat).push(", ").push_bind(body.lng).push(")) <= 10 * 1609.34 ");
+        ll_to_earth(").push_bind(body.lat).push(", ").push_bind(body.lng).push(")) <= 500 * 1609.34 ");
 
     if body.sport.clone() != "all" {
         query.push(" AND s.key = ").push_bind(body.sport);
