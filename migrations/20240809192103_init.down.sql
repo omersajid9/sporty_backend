@@ -1,9 +1,12 @@
 -- Add down migration script here
 
 -- drop type session_player_rsvp cascade;
+drop table if exists score_validation;
 drop table if exists score;
 drop table if exists session_rsvp;
 drop table if exists game;
+drop table if exists team_member;
+drop table if exists team;
 drop table if exists session;
 drop table if exists rating;
 drop table if exists sport;

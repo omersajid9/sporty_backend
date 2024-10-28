@@ -19,7 +19,15 @@ values ('omersajid', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/22
 
 insert into
 player (username, password, date_of_birth, profile_picture)
-values ('omer', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/22');
+values ('omer', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/2');
+
+insert into
+player (username, password, date_of_birth, profile_picture)
+values ('omers', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/3');
+
+insert into
+player (username, password, date_of_birth, profile_picture)
+values ('omersa', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/40');
 
 
 create table
@@ -47,13 +55,13 @@ create table
 if not exists rating (
     player_id UUID not null,
     sport_id UUID not null,
-    rating double precision not null default 1500.0,
-    std double precision not null default 350.0,
-    val double precision not null default 0.6,
+    mode text not null, -- single or team
+    rating double precision not null default 25.0,
+    uncertainity double precision not null default 8.33,
     updated timestamp not null default current_timestamp,
     constraint fk_player foreign key (player_id) references player(id) on delete cascade,
     constraint fk_sport foreign key (sport_id) references sport(id) on delete cascade,
-    unique (player_id, sport_id)
+    unique (player_id, sport_id, mode)
 );
 
 
@@ -82,30 +90,62 @@ if not exists session_rsvp (
     player_rsvp text not null default 'Pending',
     host_rsvp text not null default 'Pending',
     primary key (session_id, player_id),
+    unique(session_id, player_id),
     constraint fk_session foreign key (session_id) references session(id) on delete cascade,
     constraint fk_player foreign key (player_id) references player(id) on delete cascade
+);
+
+create table
+if not exists team (
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
+    name text,
+    created_at timestamp not null default current_timestamp
+);
+
+create table
+if not exists team_member (
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
+    team_id UUID not null,
+    player_id UUID not null,
+    created_at timestamp not null default current_timestamp,
+    constraint fk_team foreign key (team_id) references team(id) on delete cascade,
+    constraint fk_player foreign key (player_id) references player(id) on delete cascade,
+    unique(team_id, player_id)
 );
 
 create table
 if not exists game (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
     session_id UUID not null,
-    player_id_1 UUID not null,
-    player_id_2 UUID not null,
+    reporter_id UUID not null,
+    team_id_1 UUID not null,
+    team_id_2 UUID not null,
     status text not null default 'Pending',
     created_at timestamp not null default current_timestamp,
     constraint fk_session foreign key (session_id) references session(id) on delete cascade,
-    constraint fk_player_1 foreign key (player_id_1) references player(id) on delete cascade,
-    constraint fk_player_2 foreign key (player_id_2) references player(id) on delete cascade
+    constraint fk_reporter foreign key (reporter_id) references player(id) on delete cascade,
+    constraint fk_team_1 foreign key (team_id_1) references team(id) on delete cascade,
+    constraint fk_team_2 foreign key (team_id_2) references team(id) on delete cascade
 );
 
 create table
 if not exists score (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
     game_id UUID not null,
-    player_id UUID not null,
+    team_id UUID not null,
     score int not null,
     round int not null,
+    created_at timestamp not null default current_timestamp,
+    constraint fk_game foreign key (game_id) references game(id) on delete cascade,
+    constraint fk_team foreign key (team_id) references team(id) on delete cascade
+);
+
+create table
+if not exists score_validation (
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
+    game_id UUID not null,
+    player_id UUID not null,
+    status text not null,  -- 'approved' or 'rejected'  
     created_at timestamp not null default current_timestamp,
     constraint fk_game foreign key (game_id) references game(id) on delete cascade,
     constraint fk_player foreign key (player_id) references player(id) on delete cascade
