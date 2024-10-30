@@ -445,7 +445,7 @@ pub async fn confirm_score(
         .await
         .unwrap();
 
-        let mode = match total_count == 2 {
+        let mode = match players_count == 2 {
             true => "single",
             false => "team",
         };

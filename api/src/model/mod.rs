@@ -5,6 +5,7 @@ pub mod player;
 pub mod search;
 pub mod session;
 pub mod game;
+pub mod notifications;
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]

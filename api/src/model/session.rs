@@ -38,4 +38,11 @@ pub struct SessionData {
     pub count_rsvps: Option<i64>
 }
 
-
+#[derive(Debug, FromRow, Deserialize, Serialize)]
+#[allow(non_snake_case)]
+pub struct SessionRsvp {
+    pub session_id: Uuid,
+    pub player_id: Uuid,
+    pub player_rsvp: String,
+    pub host_rsvp: String,
+}

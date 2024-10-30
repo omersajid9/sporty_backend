@@ -4,7 +4,7 @@ use axum::{
 };
 use std::sync::Arc;
 
-use crate::{handler::{game::{confirm_score, get_match, report_score}, health_checker, player::{delete_player, edit_player, get_player, sign_in, sign_up}, search::{explore_sessions, going_sessions, players, reportable_sessions, sports}, session::{create_session, delete_session, edit_session, get_session, rsvp_session, session_players}}, AppState};
+use crate::{handler::{game::{confirm_score, get_match, report_score}, health_checker, notifications::{get_notifications, save_notification_token}, player::{delete_player, edit_player, get_player, sign_in, sign_up}, search::{explore_sessions, going_sessions, players, reportable_sessions, sports}, session::{create_session, delete_session, edit_session, get_session, rsvp_session, session_players}}, AppState};
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     Router::new()
@@ -13,6 +13,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .nest("/search", search_router())
         .nest("/game", game_router())
         .nest("/session", session_router())
+        .nest("/notification", notification_router())
         .with_state(app_state)
 }
 
@@ -50,6 +51,12 @@ fn game_router() -> Router<Arc<AppState>> {
         .route("/:id", get(get_match))
         .route("/report", post(report_score))
         .route("/confirm", post(confirm_score))
+}
+
+fn notification_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/report_token", post(save_notification_token))
+        .route("/get", get(get_notifications))
 }
 
 // fn player_router() -> Router<Arc<AppState>> {

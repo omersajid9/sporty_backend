@@ -95,6 +95,20 @@ if not exists session_rsvp (
     constraint fk_player foreign key (player_id) references player(id) on delete cascade
 );
 
+CREATE OR REPLACE FUNCTION notify_session_rsvp_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Notify the channel with the inserted row's ID as payload
+    PERFORM pg_notify('session_rsvp_channel', row_to_json(NEW)::text);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER session_rsvp_insert_trigger
+AFTER INSERT ON session_rsvp
+FOR EACH ROW
+EXECUTE FUNCTION notify_session_rsvp_insert();
+
 create table
 if not exists team (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
@@ -128,6 +142,38 @@ if not exists game (
     constraint fk_team_2 foreign key (team_id_2) references team(id) on delete cascade
 );
 
+CREATE OR REPLACE FUNCTION notify_game_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Notify the channel with the inserted row's ID as payload
+    PERFORM pg_notify('game_channel', row_to_json(NEW)::text);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER game_insert_trigger
+AFTER INSERT ON game
+FOR EACH ROW
+EXECUTE FUNCTION notify_game_insert();
+
+CREATE OR REPLACE FUNCTION notify_game_status_change()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only trigger notification if status is updated from 'Pending' to 'Yes' or 'No'
+    IF OLD.status = 'Pending' AND (NEW.status = 'Yes' OR NEW.status = 'No') THEN
+        PERFORM pg_notify('game_status_change_channel', row_to_json(NEW)::text);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create a trigger that calls the function after an update on the game table
+CREATE TRIGGER game_status_update_trigger
+AFTER UPDATE OF status ON game
+FOR EACH ROW
+EXECUTE FUNCTION notify_game_status_change();
+
+
 create table
 if not exists score (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
@@ -148,6 +194,40 @@ if not exists score_validation (
     status text not null,  -- 'approved' or 'rejected'  
     created_at timestamp not null default current_timestamp,
     constraint fk_game foreign key (game_id) references game(id) on delete cascade,
+    constraint fk_player foreign key (player_id) references player(id) on delete cascade
+);
+
+
+-- CREATE OR REPLACE FUNCTION notify_score_insert()
+-- RETURNS TRIGGER AS $$
+-- BEGIN
+--     -- Notify the channel with the inserted row's ID as payload
+--     PERFORM pg_notify('score_channel', row_to_json(NEW)::text);
+--     RETURN NEW;
+-- END;
+-- $$ LANGUAGE plpgsql;
+
+-- CREATE TRIGGER score_insert_trigger
+-- AFTER INSERT ON score_validation
+-- FOR EACH ROW
+-- EXECUTE FUNCTION notify_score_insert();
+
+create table
+if not exists notification_token (
+    player_id UUID NOT NULL,
+    token text not null,
+    created_at timestamp not null default current_timestamp,
+    CONSTRAINT unique_player_token UNIQUE (player_id, token),
+    constraint fk_player foreign key (player_id) references player(id) on delete cascade
+);
+
+create table
+if not exists notification (
+    id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
+    player_id UUID not null,
+    channel text not null,
+    message text not null,
+    created_at timestamp not null default current_timestamp,
     constraint fk_player foreign key (player_id) references player(id) on delete cascade
 );
 
