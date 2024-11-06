@@ -400,9 +400,9 @@ pub async fn confirm_score(
     // let total = confirmations.total.unwrap_or(0) + 1;
     // let accepted = confirmations.accepted.unwrap_or(0) + 1;
 
-    if !contains_player && total_count >= players_count {
+    if !contains_player {
         return Ok((
-            StatusCode::UNAUTHORIZED,
+            StatusCode::BAD_REQUEST,
             Json(json!({"status": "error","message": "player not in game"})),
         ));
     }

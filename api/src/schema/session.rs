@@ -10,7 +10,8 @@ pub struct PostCreateSession {
     pub location_name: String,
     pub lat: f64,
     pub lng: f64,
-    pub time: chrono::NaiveDateTime,
+    pub start_time: chrono::NaiveDateTime,
+    pub end_time: chrono::NaiveDateTime,
     pub public: bool,
     pub max_players: i32
 }
@@ -20,10 +21,12 @@ pub struct PostCreateSession {
 pub struct PatchEditSession {
     pub session_id: Uuid,
     pub username: String,
+    pub session_name: Option<String>,
     pub location_name: Option<String>,
     pub lat: Option<f64>,
     pub lng: Option<f64>,
-    pub time: Option<chrono::NaiveDateTime>
+    pub start_time: Option<chrono::NaiveDateTime>,
+    pub end_time: Option<chrono::NaiveDateTime>
 }
 
 #[derive(Serialize, Deserialize, Debug)]

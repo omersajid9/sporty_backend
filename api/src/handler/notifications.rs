@@ -21,6 +21,9 @@ async fn send_push_notifications(
     message: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let expo = Expo::new(ExpoClientOptions { access_token: None });
+    if push_tokens.is_empty() {
+        return Ok(());
+    }
     let expo_push_message = ExpoPushMessage::builder(push_tokens)
         .body(message)
         .build()?;
@@ -156,7 +159,7 @@ pub async fn game_channel(data: Arc<AppState>, game: Game) {
             VALUES ($1, 'game', $2)",
             player.id,
             format!(
-                "{} has created a new game. Confirm you scores.",
+                "{} has reported scores to your session.",
                 reporter.username
             )
         )
@@ -180,7 +183,7 @@ pub async fn game_channel(data: Arc<AppState>, game: Game) {
     send_push_notifications(
         push_tokens,
         format!(
-            "{} has created a new game. Confirm you scores.",
+            "{} has reported scores to your session.",
             reporter.username
         )
         .as_str(),
@@ -269,7 +272,7 @@ pub async fn get_notifications(
 
     let notifications = sqlx::query_as!(
         Notification,
-        "SELECT * FROM notification WHERE player_id = $1",
+        "SELECT * FROM notification WHERE player_id = $1 ORDER BY created_at DESC",
         player.id
     )
     .fetch_all(&data.db)
@@ -297,6 +300,17 @@ pub async fn save_notification_token(
 
     let _ = sqlx::query_as!(
         NotificationToken,
+        "DELETE FROM
+        notification_token 
+        WHERE token = $1",
+        body.token
+    )
+    .execute(&data.db)
+    .await
+    .unwrap();
+
+    let _ = sqlx::query_as!(
+        NotificationToken,
         "INSERT INTO
         notification_token (player_id, token)
         VALUES ($1, $2)
@@ -313,3 +327,65 @@ pub async fn save_notification_token(
         Json(json!({"status": "success", "message": "Notification token saved successfully"})),
     ))
 }
+pub async fn remove_notification_token(
+    State(data): State<Arc<AppState>>,
+    axum::extract::Json(body): axum::extract::Json<PostNotificationToken>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let player = sqlx::query_as!(
+        Player,
+        "SELECT * FROM player WHERE username = $1",
+        body.username
+    )
+    .fetch_one(&data.db)
+    .await
+    .unwrap();
+
+    let _ = sqlx::query_as!(
+        NotificationToken,
+        "DELETE FROM
+        notification_token 
+        WHERE player_id = $1 AND token = $2",
+        player.id,
+        body.token
+    )
+    .execute(&data.db)
+    .await
+    .unwrap();
+
+    Ok((
+        StatusCode::OK,
+        Json(json!({"status": "success", "message": "Notification token saved successfully"})),
+    ))
+}
+
+pub async fn _remove_notification_token(
+    State(data): State<Arc<AppState>>,
+    axum::extract::Json(body): axum::extract::Json<PostNotificationToken>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let player = sqlx::query_as!(
+        Player,
+        "SELECT * FROM player WHERE username = $1",
+        body.username
+    )
+    .fetch_one(&data.db)
+    .await
+    .unwrap();
+
+    let _ = sqlx::query_as!(
+        NotificationToken,
+        "DELETE FROM
+        notification_token 
+        WHERE player_id = $1 AND token = $2",
+        player.id,
+        body.token
+    )
+    .execute(&data.db)
+    .await
+    .unwrap();
+
+    Ok((
+        StatusCode::OK,
+        Json(json!({"status": "success", "message": "Notification token saved successfully"})),
+    ))
+}
+

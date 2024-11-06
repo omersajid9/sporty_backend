@@ -9,7 +9,7 @@ use axum::{
 use serde_json::json;
 use sqlx::{Postgres, QueryBuilder};
 
-use crate::{model::{player::Player, search::{ExploreSessionsData, GoingSessionData, ReportableSessionData, Sport}}, schema::search::{GetExploreSessions, GetGoingSessions, GetPlayers, GetReportableSessions}, AppState};
+use crate::{model::{player::Player, search::{ExploreSessionData, GoingSessionData, ReportableSessionData, Sport}}, schema::search::{GetExploreSessions, GetGoingSessions, GetPlayers, GetReportableSessions}, AppState};
 
 
 pub async fn players(
@@ -68,7 +68,7 @@ pub async fn explore_sessions(
     .unwrap();
 
     let mut query: QueryBuilder<Postgres> = QueryBuilder::new(
-        "SELECT ses.id, ses.location_name, ses.session_name, s.icon_source as sport_icon_source, p.username, s.name as sport, ses.lat, ses.lon, ses.time, p.profile_picture as username_icon, s.icon as sport_icon, ses.max_players, (SELECT COUNT(player_id) FROM session_rsvp WHERE session_id = ses.id AND player_rsvp = 'Yes') as count_rsvps
+        "SELECT ses.id, ses.location_name, ses.session_name, s.icon_source as sport_icon_source, p.username, s.name as sport, ses.lat, ses.lon, ses.start_time, p.profile_picture as username_icon, s.icon as sport_icon, ses.max_players, (SELECT COUNT(player_id) FROM session_rsvp WHERE session_id = ses.id AND player_rsvp = 'Yes') as count_rsvps, ses.end_time
          ");
         query.push(", earth_distance(ll_to_earth(ses.lat, ses.lon), ll_to_earth(").push_bind(body.lat).push(", ").push_bind(body.lng).push(")) as dis ");
     
@@ -90,13 +90,13 @@ pub async fn explore_sessions(
     };
 
     if let Some(date) = body.date {
-        query.push(" AND DATE(ses.time) = ").push_bind(date);
+        query.push(" AND DATE(ses.start_time) = ").push_bind(date);
     };
 
-    query.push(" ORDER BY dis ASC, DATE(ses.time) ASC");
+    query.push(" ORDER BY dis ASC, DATE(ses.start_time) ASC");
 
     let sessions = query
-        .build_query_as::<ExploreSessionsData>()
+        .build_query_as::<ExploreSessionData>()
         .fetch_all(&data.db)
         .await
         .unwrap();
@@ -126,11 +126,12 @@ pub async fn going_sessions(
         "SELECT ses.id, 
         ses.location_name, 
         ses.session_name, 
+        ses.start_time,
         p.username, 
         s.name as sport, 
         s.icon_source as sport_icon_source, 
         ses.lat, ses.lon, 
-        ses.time, 
+        ses.end_time, 
         p.profile_picture as username_icon, 
         s.icon as sport_icon, 
         ses.max_players, 
@@ -141,7 +142,7 @@ pub async fn going_sessions(
          INNER JOIN sport s ON ses.sport_id = s.id
          WHERE ses.id IN (SELECT session_id FROM session_rsvp WHERE player_id = $1 AND player_rsvp = 'Yes')
          OR ses.host_id = $1
-         ORDER BY ses.time ASC",
+         ORDER BY ses.start_time ASC",
         player.id,
         body.lat,
         body.lng
@@ -183,7 +184,7 @@ pub async fn reportable_sessions(
          WHERE (ses.id IN (SELECT session_id FROM session_rsvp WHERE player_id = $1 AND player_rsvp = 'Yes')
          OR ses.host_id = $1)
          AND (SELECT COUNT(distinct player_id) FROM session_rsvp WHERE session_id = ses.id AND player_rsvp = 'Yes') > 0
-         ORDER BY ses.time ASC",
+         ORDER BY ses.start_time ASC",
          player.id
         )
         .fetch_all(&data.db)

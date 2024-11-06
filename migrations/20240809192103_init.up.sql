@@ -39,6 +39,60 @@ if not exists sport (
     icon_source varchar(100) not null
 );
 
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Soccer', 'soccer', 'soccer-ball-o', 'fontawesome');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Basketball', 'basketball', 'basketball', 'materialcommunityicons');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Football', 'football', 'football', 'materialcommunityicons');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Volleyball', 'volleyball', 'volleyball', 'fontawesome6');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Cricket', 'cricket', 'cricket', 'materialcommunityicons');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Baseball', 'baseball', 'baseball', 'fontawesome6');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Running', 'running', 'person-running', 'fontawesome6');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Cycling', 'cycling', 'bicycle', 'ionicons');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Weight Lifting', 'weightlifting', 'weight-lifter', 'materialcommunityicons');
+
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Swimming', 'swimming', 'person-swimming', 'fontawesome6');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Skateboarding', 'skateboarding', 'skateboarding', 'materialcommunityicons');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Yoga', 'yoga', 'yoga', 'materialcommunityicons');
+
+insert into
+sport (name, key, icon, icon_source)
+values ('Bowling', 'bowling', 'bowling-ball', 'fontawesome6');
+
 insert into
 sport (name, key, icon, icon_source)
 values ('Table Tennis', 'tabletennis', 'table-tennis', 'fontawesome5');
@@ -76,7 +130,8 @@ if not exists session (
     lon double precision not null,
     public boolean not null default true,
     max_players int not null default 2,
-    time timestamp not null default current_timestamp,
+    start_time timestamp not null default current_timestamp,
+    end_time timestamp not null default current_timestamp,
     constraint fk_sport foreign key (sport_id) references sport(id) on delete cascade,
     constraint fk_host foreign key (host_id) references player(id) on delete cascade
 );

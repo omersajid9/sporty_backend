@@ -10,6 +10,8 @@ mod route;
 mod handler;
 mod schema;
 mod model;
+mod auth;
+mod error;
 
 struct AppState {
     pub db: Pool<Postgres>
@@ -21,6 +23,7 @@ async fn main() {
 
     let listener = server().await;
     let pool = connect_database().await;
+
     let state = Arc::new(AppState { db: pool });
     let router = router(state.clone());
 

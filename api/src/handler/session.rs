@@ -21,11 +21,12 @@ pub async fn get_session(
         "SELECT ses.id, 
         ses.location_name, 
         ses.session_name, 
+        ses.start_time,
         p.username, 
         s.name as sport, 
         s.icon_source as sport_icon_source, 
         ses.lat, ses.lon, 
-        ses.time, 
+        ses.end_time, 
         p.profile_picture as username_icon, 
         s.icon as sport_icon, 
         ses.max_players, 
@@ -74,17 +75,18 @@ pub async fn create_session(
     let _ = sqlx::query_as!(
         Session,
         "INSERT INTO
-        session (session_name, sport_id, host_id, lat, lon, time, public, max_players, location_name)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)",
+        session (session_name, sport_id, host_id, lat, lon, start_time, public, max_players, location_name, end_time)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
         body.session_name,
         sport.id,
         player.id,
         body.lat,
         body.lng,
-        body.time,
+        body.start_time,
         body.public,
         body.max_players,
-        body.location_name
+        body.location_name,
+        body.end_time
     )
     .execute(&data.db)
     .await
@@ -109,7 +111,7 @@ pub async fn edit_session(
     .await
     .unwrap();
 
-    if body.lat.is_some() || body.lng.is_some() {
+    if body.lat.is_some() && body.lng.is_some() {
         let lat = body.lat.unwrap();
         let lng = body.lng.unwrap();
         let _ = sqlx::query_as!(
@@ -125,12 +127,40 @@ pub async fn edit_session(
         .unwrap();
     }
 
-    if body.time.is_some() {
-        let time = body.time.unwrap();
+    if body.session_name.is_some() {
+        let session_name = body.session_name.unwrap();
         let _ = sqlx::query_as!(
             Session,
-            "UPDATE session SET time = $1 WHERE id = $2 AND host_id = $3",
-            time,
+            "UPDATE session SET session_name = $1 WHERE id = $2 AND host_id = $3",
+            session_name,
+            body.session_id as Uuid,
+            player.id
+        )
+        .execute(&data.db)
+        .await
+        .unwrap();
+    }
+
+    if body.end_time.is_some() {
+        let end_time = body.end_time.unwrap();
+        let _ = sqlx::query_as!(
+            Session,
+            "UPDATE session SET end_time = $1 WHERE id = $2 AND host_id = $3",
+            end_time,
+            body.session_id as Uuid,
+            player.id
+        )
+        .execute(&data.db)
+        .await
+        .unwrap();
+    }
+
+    if body.start_time.is_some() {
+        let start_time = body.start_time.unwrap();
+        let _ = sqlx::query_as!(
+            Session,
+            "UPDATE session SET start_time = $1 WHERE id = $2 AND host_id = $3",
+            start_time,
             body.session_id as Uuid,
             player.id
         )

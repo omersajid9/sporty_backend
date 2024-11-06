@@ -15,7 +15,7 @@ pub struct Sport {
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
-pub struct ExploreSessionsData {
+pub struct ExploreSessionData {
     pub id: Uuid,
     pub session_name: String,
     pub username: String,
@@ -27,7 +27,8 @@ pub struct ExploreSessionsData {
     pub lat: f64,
     pub lon: f64,
     pub dis: Option<f64>,
-    pub time: chrono::NaiveDateTime,
+    pub start_time: chrono::NaiveDateTime,
+    pub end_time: chrono::NaiveDateTime,
     pub max_players: i32,
     pub count_rsvps: Option<i64>
 }
@@ -46,7 +47,8 @@ pub struct GoingSessionData {
     pub lat: f64,
     pub lon: f64,
     pub dis: Option<f64>,
-    pub time: chrono::NaiveDateTime,
+    pub start_time: chrono::NaiveDateTime,
+    pub end_time: chrono::NaiveDateTime,
     pub max_players: i32,
     pub count_rsvps: Option<i64>
 }

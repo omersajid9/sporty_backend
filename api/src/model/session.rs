@@ -15,7 +15,8 @@ pub struct Session {
     pub lon: f64,
     pub public: bool,
     pub max_players: i32,
-    pub time: chrono::NaiveDateTime,
+    pub start_time: chrono::NaiveDateTime,
+    pub end_time: chrono::NaiveDateTime
 }
 
 
@@ -33,7 +34,8 @@ pub struct SessionData {
     pub lat: f64,
     pub lon: f64,
     pub dis: Option<f64>,
-    pub time: chrono::NaiveDateTime,
+    pub start_time: chrono::NaiveDateTime,
+    pub end_time: chrono::NaiveDateTime,
     pub max_players: i32,
     pub count_rsvps: Option<i64>
 }

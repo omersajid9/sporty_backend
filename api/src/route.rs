@@ -1,28 +1,38 @@
 use axum::{
-    routing::{delete, get, patch, post},
-    Router,
+    middleware::from_fn, routing::{delete, get, patch, post}, Router
 };
 use std::sync::Arc;
 
-use crate::{handler::{game::{confirm_score, get_match, report_score}, health_checker, notifications::{get_notifications, save_notification_token}, player::{delete_player, edit_player, get_player, sign_in, sign_up}, search::{explore_sessions, going_sessions, players, reportable_sessions, sports}, session::{create_session, delete_session, edit_session, get_session, rsvp_session, session_players}}, AppState};
+use crate::{auth::require_auth, handler::{game::{confirm_score, get_match, report_score}, health_checker, notifications::{get_notifications, remove_notification_token, save_notification_token}, player::{delete_player, edit_player, get_player, sign_in, sign_up}, search::{explore_sessions, going_sessions, players, reportable_sessions, sports}, session::{create_session, delete_session, edit_session, get_session, rsvp_session, session_players}}, AppState};
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
-    Router::new()
+    let non_protected = Router::new()
         .route("/health_checker", get(health_checker))
+        .nest("/auth", auth_router());
+
+    let protected = Router::new()
         .nest("/player", player_router())
         .nest("/search", search_router())
         .nest("/game", game_router())
         .nest("/session", session_router())
         .nest("/notification", notification_router())
+        .layer(from_fn(require_auth));
+
+    Router::new()
+        .merge(non_protected)
+        .merge(protected)
         .with_state(app_state)
 }
 
+fn auth_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/sign-in", post(sign_in))
+        .route("/sign-up", post(sign_up))
+}
 
 fn player_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/profile", get(get_player)) //todo
-        .route("/sign-in", post(sign_in))
-        .route("/sign-up", post(sign_up))
         .route("/delete", delete(delete_player))
         .route("/edit", patch(edit_player))
 }
@@ -56,6 +66,7 @@ fn game_router() -> Router<Arc<AppState>> {
 fn notification_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/report_token", post(save_notification_token))
+        .route("/remove_token", post(remove_notification_token))
         .route("/get", get(get_notifications))
 }
 

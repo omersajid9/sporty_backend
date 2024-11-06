@@ -4,12 +4,10 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 use serde_json::json;
 
 use crate::{
-    model::{
+    auth::Claims, model::{
         game::{Game, GameData, TeamScore, UserDetails},
         player::{Player, RatingData}, Username,
-    },
-    schema::player::*,
-    AppState,
+    }, schema::player::*, AppState
 };
 
 pub async fn sign_in(
@@ -29,12 +27,17 @@ pub async fn sign_in(
 
     match result {
         Ok(player) => {
+            let claims = Claims::new(player.id, 24 * 3600); // Token valid for 24 hours
+            let token = claims.generate_token()
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR).unwrap();
+            let user_data = json!({
+                "token": token,
+            });
+
             let player_response = json!({
                 "status": "success",
                 "message": "player signed in successfully",
-                "data": {
-                    "username": player.username,
-                }
+                "auth_token": user_data
             });
             Ok((StatusCode::OK, Json(player_response)))
         }
@@ -44,7 +47,7 @@ pub async fn sign_in(
                     "status": "error",
                     "message": "invalid username or password"
                 });
-                return Err((StatusCode::UNAUTHORIZED, Json(error_response)));
+                return Err((StatusCode::BAD_REQUEST, Json(error_response)));
             }
             let error_response = json!({"status": "error", "message": "an error occurred"});
             Err((StatusCode::INTERNAL_SERVER_ERROR, Json(error_response)))
@@ -71,9 +74,16 @@ pub async fn sign_up(
     .await;
 
     match result {
-        Ok(_player) => {
+        Ok(player) => {
+            let claims = Claims::new(player.id, 24 * 3600); // Token valid for 24 hours
+            let token = claims.generate_token()
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR).unwrap();
+            let user_data = json!({
+                "token": token,
+            });
+
             let player_response =
-                json!({"status": "success", "data": "player created successfully"});
+                json!({"status": "success", "auth_token": user_data});
             Ok((StatusCode::CREATED, Json(player_response)))
         }
         Err(e) => {
@@ -112,7 +122,7 @@ pub async fn delete_player(
         return Err((StatusCode::NOT_FOUND, Json(error_response)));
     }
 
-    Ok(StatusCode::NO_CONTENT)
+    Ok(StatusCode::OK)
 }
 
 pub async fn edit_player(
