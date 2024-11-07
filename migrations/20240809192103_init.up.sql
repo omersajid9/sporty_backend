@@ -8,26 +8,25 @@ if not exists player (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
     username varchar(50) unique not null,
     password text not null,
-    date_of_birth date not null,
     -- location
     profile_picture text not null
 );
 
 insert into
-player (username, password, date_of_birth, profile_picture)
-values ('omersajid', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/22');
+player (username, password, profile_picture)
+values ('omersajid', 'a', 'https://avatar.iran.liara.run/public/22');
 
 insert into
-player (username, password, date_of_birth, profile_picture)
-values ('omer', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/2');
+player (username, password, profile_picture)
+values ('omer', 'a', 'https://avatar.iran.liara.run/public/2');
 
 insert into
-player (username, password, date_of_birth, profile_picture)
-values ('omers', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/3');
+player (username, password, profile_picture)
+values ('omers', 'a', 'https://avatar.iran.liara.run/public/3');
 
 insert into
-player (username, password, date_of_birth, profile_picture)
-values ('omersa', 'a', '2000-10-16', 'https://avatar.iran.liara.run/public/40');
+player (username, password, profile_picture)
+values ('omersa', 'a', 'https://avatar.iran.liara.run/public/40');
 
 
 create table

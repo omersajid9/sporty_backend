@@ -12,7 +12,6 @@ pub struct Player {
     pub id: Uuid,
     pub username: String,
     pub password: String,
-    pub date_of_birth: chrono::NaiveDate,
     pub profile_picture: String
 }
 

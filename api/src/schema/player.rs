@@ -18,7 +18,6 @@ pub struct SignIn {
 pub struct SignUp {
     pub username: String,
     pub password: String,
-    pub date_of_birth: chrono::NaiveDate,
     pub profile_picture: String
 }
 

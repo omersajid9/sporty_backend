@@ -62,12 +62,11 @@ pub async fn sign_up(
     let result = sqlx::query_as!(
         Player,
         "INSERT INTO player 
-            (username, password, date_of_birth, profile_picture) 
+            (username, password, profile_picture) 
             VALUES ($1, $2, $3, $4)
             RETURNING *",
         body.username.to_string(),
         body.password.to_string(),
-        body.date_of_birth,
         body.profile_picture
     )
     .fetch_one(&data.db)
