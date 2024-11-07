@@ -14,19 +14,19 @@ if not exists player (
 
 insert into
 player (username, password, profile_picture)
-values ('omersajid', 'a', 'https://avatar.iran.liara.run/public/22');
+values ('omersajid', 'hellobrother20', 'https://avatar.iran.liara.run/public/22');
 
 insert into
 player (username, password, profile_picture)
-values ('omer', 'a', 'https://avatar.iran.liara.run/public/2');
+values ('omer', 'hellobrother20', 'https://avatar.iran.liara.run/public/2');
 
 insert into
 player (username, password, profile_picture)
-values ('omers', 'a', 'https://avatar.iran.liara.run/public/3');
+values ('omers', 'hellobrother20', 'https://avatar.iran.liara.run/public/3');
 
 insert into
 player (username, password, profile_picture)
-values ('omersa', 'a', 'https://avatar.iran.liara.run/public/40');
+values ('omersa', 'hellobrother20', 'https://avatar.iran.liara.run/public/40');
 
 
 create table
