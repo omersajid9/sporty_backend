@@ -63,7 +63,7 @@ pub async fn sign_up(
         Player,
         "INSERT INTO player 
             (username, password, profile_picture) 
-            VALUES ($1, $2, $3, $4)
+            VALUES ($1, $2, $3)
             RETURNING *",
         body.username.to_string(),
         body.password.to_string(),
