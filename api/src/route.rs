@@ -1,5 +1,5 @@
 use axum::{
-    middleware::from_fn, routing::{delete, get, patch, post}, Router
+    middleware::from_fn_with_state, routing::{delete, get, patch, post}, Router
 };
 use std::sync::Arc;
 
@@ -16,7 +16,7 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
         .nest("/game", game_router())
         .nest("/session", session_router())
         .nest("/notification", notification_router())
-        .layer(from_fn(require_auth));
+        .layer(from_fn_with_state(app_state.clone(), require_auth));
 
     Router::new()
         .merge(non_protected)

@@ -7,6 +7,8 @@ pub enum AuthError {
     InvalidToken(#[from] jsonwebtoken::errors::Error),
     #[error("missing authorization header")]
     MissingToken,
+    #[error("user not found")]
+    UserNotFound,
 }
 
 // Implement response conversion for AuthError
@@ -15,6 +17,7 @@ impl IntoResponse for AuthError {
         let (status, message) = match self {
             AuthError::InvalidToken(_) => (StatusCode::BAD_REQUEST, "Invalid token"),
             AuthError::MissingToken => (StatusCode::UNAUTHORIZED, "Missing token"),
+            AuthError::UserNotFound => (StatusCode::UNAUTHORIZED, "User not found"),
         };
         
         (status, message).into_response()
