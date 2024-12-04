@@ -9,7 +9,7 @@ use axum::{
 use serde_json::json;
 use uuid::Uuid;
 
-use crate::{model::{player::Player, search::Sport, session::{Session, SessionData}, Count, Username}, schema::session::{DeleteDeleteSession, GetSession, GetSessionPlayers, PatchEditSession, PostCreateSession, PostSessionRsvp}, AppState};
+use crate::{model::{game::UserDetails, player::Player, search::Sport, session::{Session, SessionData}, Count, Username}, schema::session::{DeleteDeleteSession, GetSession, GetSessionPlayers, PatchEditSession, PostCreateSession, PostSessionRsvp}, AppState};
 
 pub async fn get_session(
     Path(id): Path<Uuid>,
@@ -22,7 +22,8 @@ pub async fn get_session(
         ses.location_name, 
         ses.session_name, 
         ses.start_time,
-        p.username, 
+        p.username,
+        p.id as user_id,
         s.name as sport, 
         s.icon_source as sport_icon_source, 
         ses.lat, ses.lon, 
@@ -63,15 +64,6 @@ pub async fn create_session(
     .await
     .unwrap();
 
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.username.to_string()
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
     let _ = sqlx::query_as!(
         Session,
         "INSERT INTO
@@ -79,7 +71,7 @@ pub async fn create_session(
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)",
         body.session_name,
         sport.id,
-        player.id,
+        body.user_id,
         body.lat,
         body.lng,
         body.start_time,
@@ -102,15 +94,6 @@ pub async fn edit_session(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<PatchEditSession>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.username.to_string()
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
     if body.lat.is_some() && body.lng.is_some() {
         let lat = body.lat.unwrap();
         let lng = body.lng.unwrap();
@@ -120,7 +103,7 @@ pub async fn edit_session(
             lat,
             lng,
             body.session_id as Uuid,
-            player.id
+            body.user_id.clone()
         )
         .execute(&data.db)
         .await
@@ -134,7 +117,7 @@ pub async fn edit_session(
             "UPDATE session SET session_name = $1 WHERE id = $2 AND host_id = $3",
             session_name,
             body.session_id as Uuid,
-            player.id
+            body.user_id.clone()
         )
         .execute(&data.db)
         .await
@@ -148,7 +131,7 @@ pub async fn edit_session(
             "UPDATE session SET end_time = $1 WHERE id = $2 AND host_id = $3",
             end_time,
             body.session_id as Uuid,
-            player.id
+            body.user_id.clone()
         )
         .execute(&data.db)
         .await
@@ -162,7 +145,7 @@ pub async fn edit_session(
             "UPDATE session SET start_time = $1 WHERE id = $2 AND host_id = $3",
             start_time,
             body.session_id as Uuid,
-            player.id
+            body.user_id
         )
         .execute(&data.db)
         .await
@@ -179,20 +162,11 @@ pub async fn delete_session(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<DeleteDeleteSession>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.username.to_string()
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
     let _ = sqlx::query_as!(
         Session,
         "DELETE FROM session WHERE id = $1 AND host_id = $2",
         body.session_id,
-        player.id
+        body.user_id
     )
     .execute(&data.db)
     .await
@@ -207,15 +181,6 @@ pub async fn rsvp_session(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<PostSessionRsvp>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.player_username.to_string()
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
     let session = sqlx::query_as!(
         Session,
         "SELECT * FROM session WHERE id = $1",
@@ -238,7 +203,7 @@ pub async fn rsvp_session(
 
     let rsvp_player = accepted_sessions.count.unwrap_or(0) + 1;
 
-    if session.max_players > rsvp_player as i32 && session.host_id != player.id {
+    if session.max_players > rsvp_player as i32 && session.host_id != body.player_user_id {
         let _ = sqlx::query_as!(
             SessionRsvp,
             "INSERT INTO
@@ -249,7 +214,7 @@ pub async fn rsvp_session(
             SET player_rsvp = $3
             ",
             body.session_id,
-            player.id,
+            body.player_user_id,
             body.player_rsvp,
             "Yes"
         )
@@ -273,8 +238,8 @@ pub async fn session_players(
     axum::extract::Query(body): axum::extract::Query<GetSessionPlayers>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let host = sqlx::query_as!(
-        Username,
-        "SELECT p.username
+        UserDetails,
+        "SELECT p.username, p.id, p.profile_picture
         FROM session ses
         INNER JOIN player p ON ses.host_id = p.id 
         WHERE ses.id = $1",
@@ -284,8 +249,8 @@ pub async fn session_players(
     .await
     .unwrap();
     let mut usernames = sqlx::query_as!(
-        Username,
-        "SELECT p.username
+        UserDetails,
+        "SELECT p.username, p.id, p.profile_picture
         FROM session_rsvp sr
         INNER JOIN player p ON p.id = sr.player_id
         WHERE sr.session_id = $1 AND sr.player_rsvp = 'Yes'",

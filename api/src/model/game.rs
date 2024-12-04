@@ -36,6 +36,7 @@ pub struct TeamScore {
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
 pub struct UserDetails {
+    pub id: Uuid,
     pub username: String,
     pub profile_picture: String,
 }
@@ -44,21 +45,21 @@ pub struct UserDetails {
 #[allow(non_snake_case)]
 pub struct GameData {
     pub id: Uuid,
-    pub team_1_usernames: Vec<UserDetails>,
-    pub team_2_usernames: Vec<UserDetails>,
-    pub reporter_username: String,
+    pub team_1_users: Vec<UserDetails>,
+    pub team_2_users: Vec<UserDetails>,
+    pub reporter_user: UserDetails,
     pub scores: Vec<TeamScore>,
     pub status: String,
-    pub players: Vec<String>,
-    pub accepted: Vec<String>,
-    pub total: Vec<String>,
+    pub players: Vec<Uuid>,
+    pub accepted: Vec<Uuid>,
+    pub total: Vec<Uuid>,
     pub created_at: chrono::NaiveDateTime
 }
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
 pub struct ScoreConfirmation {
-    pub username: String,
+    pub user_id: String,
     pub confirmation: String
 }
 

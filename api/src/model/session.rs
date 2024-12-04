@@ -20,11 +20,13 @@ pub struct Session {
 }
 
 
+
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
 pub struct SessionData {
     pub id: Uuid,
     pub session_name: String,
+    pub user_id: Uuid,
     pub username: String,
     pub username_icon: String,
     pub sport: String,

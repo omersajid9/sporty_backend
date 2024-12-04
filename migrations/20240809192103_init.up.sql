@@ -7,26 +7,29 @@ create table
 if not exists player (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
     username varchar(50) unique not null,
-    password text not null,
-    -- location
-    profile_picture text not null
+    first_name varchar(100),
+    last_name varchar(100),
+    password text, -- yes, no, no
+    auth_type varchar(10) not null, -- email, phone, apple
+    auth_id text not null, -- yes, yes, yes
+    profile_picture text not null default 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV3.png',
+    UNIQUE (auth_type, auth_id)
 );
 
 insert into
-player (username, password, profile_picture)
-values ('omersajid', 'hellobrother20', 'https://avatar.iran.liara.run/public/22');
+player (username, password, auth_type, auth_id, profile_picture)
+values ('omersajid', 'a', 'email', 'omersajid', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV22.png');
 
 insert into
-player (username, password, profile_picture)
-values ('omer', 'hellobrother20', 'https://avatar.iran.liara.run/public/2');
+player (username, password, auth_type, auth_id, profile_picture)
+values ('omer', 'a', 'email', 'omer', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV23.png');
+insert into
+player (username, password, auth_type, auth_id, profile_picture)
+values ('omers', 'a', 'email', 'omers', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV10.png');
 
 insert into
-player (username, password, profile_picture)
-values ('omers', 'hellobrother20', 'https://avatar.iran.liara.run/public/3');
-
-insert into
-player (username, password, profile_picture)
-values ('omersa', 'hellobrother20', 'https://avatar.iran.liara.run/public/40');
+player (username, password, auth_type, auth_id, profile_picture)
+values ('omersa', 'a', 'email', 'omersa', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV5.png');
 
 
 create table
@@ -134,6 +137,21 @@ if not exists session (
     constraint fk_sport foreign key (sport_id) references sport(id) on delete cascade,
     constraint fk_host foreign key (host_id) references player(id) on delete cascade
 );
+
+-- insert into session (session_name, sport_id, host_id, location_name, lat, lon, public, max_players, start_time, end_time)
+-- select 
+--     'Session ' || i,
+--     (select id from sport order by id offset (i - 1) % (select count(*) from sport) limit 1),  -- Cycle through sports
+--     (select id from player order by id offset (i - 1) % (select count(*) from player) limit 1),  -- Cycle through players
+--     'Location ' || i,
+--     40.731680 + ((random() - 0.5) * 0.01),  -- Latitude with a small random offset
+--     -74.055510 + ((random() - 0.5) * 0.01), -- Longitude with a small random offset
+--     True,
+--     2 + (i % 10),  -- Max players
+--     NOW() + (CASE WHEN i % 2 = 0 THEN 10 * i ELSE 10 * i END || ' hours')::interval, -- Start time: alternating +/- i hours
+--     NOW() + (CASE WHEN i % 2 = 0 THEN 10 * i + 2 ELSE (10 * i + 2) END || ' hours')::interval -- End time: start time + 2 hours
+-- from generate_series(1, 4) as i;
+
 
 -- create type session_player_rsvp as enum ('Pending', 'Yes', 'No');
 
@@ -251,6 +269,80 @@ if not exists score_validation (
     constraint fk_player foreign key (player_id) references player(id) on delete cascade
 );
 
+-- INSERT INTO session_rsvp (session_id, player_id, player_rsvp, host_rsvp)
+-- SELECT 
+--     s.id AS session_id, 
+--     p.id AS player_id,
+--     CASE 
+--         WHEN random() < 0.3 THEN 'Pending'
+--         WHEN random() < 0.6 THEN 'Yes'
+--         ELSE 'No'
+--     END AS player_rsvp,
+--     CASE 
+--         WHEN random() < 0.3 THEN 'Pending'
+--         WHEN random() < 0.6 THEN 'Yes'
+--         ELSE 'No'
+--     END AS host_rsvp
+-- FROM 
+--     session s
+--     CROSS JOIN player p
+-- WHERE 
+--     p.id != s.host_id  -- Exclude the host from player RSVPs
+-- LIMIT 50;  -- Limit
+
+-- INSERT INTO team (name) VALUES 
+-- ('Lightning Strikers'),
+-- ('Mountain Wolves'),
+-- ('Ocean Sharks'),
+-- ('Urban Eagles'),
+-- ('River Raiders');
+
+-- INSERT INTO team_member (team_id, player_id)
+-- SELECT 
+--     t.id, 
+--     p.id
+-- FROM 
+--     team t
+-- CROSS JOIN 
+--     player p
+-- LIMIT 10;
+
+
+-- INSERT INTO game (session_id, reporter_id, team_id_1, team_id_2, status)
+-- SELECT 
+--     s.id, 
+--     p.id, 
+--     t1.id, 
+--     t2.id, 
+--     (ARRAY['Pending', 'Yes', 'No'])[floor(random() * 3 + 1)::int]
+-- FROM 
+--     session s
+-- JOIN 
+--     player p ON p.id = s.host_id
+-- CROSS JOIN 
+--     team t1
+-- CROSS JOIN 
+--     team t2
+-- WHERE 
+--     t1.id != t2.id
+-- LIMIT 10;
+
+
+-- INSERT INTO score (game_id, team_id, score, round)
+-- SELECT 
+--     g.id, 
+--     t.id, 
+--     floor(random() * 10)::int, 
+--     floor(random() * 3 + 1)::int
+-- FROM 
+--     game g
+-- CROSS JOIN 
+--     team t
+-- WHERE 
+--     t.id IN (g.team_id_1, g.team_id_2)
+-- LIMIT 20;
+
+
 
 -- CREATE OR REPLACE FUNCTION notify_score_insert()
 -- RETURNS TRIGGER AS $$
@@ -283,6 +375,16 @@ if not exists notification (
     message text not null,
     created_at timestamp not null default current_timestamp,
     constraint fk_player foreign key (player_id) references player(id) on delete cascade
+);
+
+create table
+if not exists follow (
+    user_id UUID not null,
+    follower_id UUID not null,
+    created_at timestamp not null default current_timestamp,
+    primary key (follower_id, user_id),
+    constraint fk_follower foreign key (follower_id) references player(id) on delete cascade,
+    constraint fk_user foreign key (user_id) references player(id) on delete cascade
 );
 
 -- create type challenge_rsvp as enum ('Maybe', 'Yes', 'No');

@@ -1,6 +1,7 @@
 -- Add down migration script here
 
 -- drop type session_player_rsvp cascade;
+drop table if exists follow;
 drop table if exists notification;
 drop table if exists notification_token;
 drop table if exists score_validation;

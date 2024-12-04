@@ -12,6 +12,7 @@ mod schema;
 mod model;
 mod auth;
 mod error;
+mod util;
 
 struct AppState {
     pub db: Pool<Postgres>

@@ -33,7 +33,7 @@ impl Claims {
 
         Self {
             sub: user_id,
-            exp: now + expires_in_seconds as usize,
+            exp: now + expires_in_seconds as usize - 20,
             iat: now,
         }
     }
@@ -83,18 +83,18 @@ pub async fn require_auth(
         .headers()
         .get("Authorization")
         .and_then(|header| header.to_str().ok())
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .ok_or(StatusCode::BAD_REQUEST)?;
 
     let token = auth_header
         .strip_prefix("Bearer ")
-        .ok_or(StatusCode::UNAUTHORIZED)?;
+        .ok_or(StatusCode::BAD_REQUEST)?;
 
     let claims = Claims::decode_token(token)
         .map_err(|_| StatusCode::UNAUTHORIZED)?;
 
     Claims::verify_user(claims.sub, &state.db)
         .await
-        .map_err(|_| StatusCode::UNAUTHORIZED)?;
+        .map_err(|_| StatusCode::NOT_FOUND)?;
 
     let mut request = request;
     request.extensions_mut().insert(claims);

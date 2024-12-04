@@ -6,7 +6,7 @@ use uuid::Uuid;
 pub struct PostCreateSession {
     pub sport: String,
     pub session_name: String,
-    pub username: String,
+    pub user_id: Uuid,
     pub location_name: String,
     pub lat: f64,
     pub lng: f64,
@@ -20,7 +20,7 @@ pub struct PostCreateSession {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PatchEditSession {
     pub session_id: Uuid,
-    pub username: String,
+    pub user_id: Uuid,
     pub session_name: Option<String>,
     pub location_name: Option<String>,
     pub lat: Option<f64>,
@@ -32,13 +32,13 @@ pub struct PatchEditSession {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeleteDeleteSession {
     pub session_id: Uuid,
-    pub username: String
+    pub user_id: Uuid
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PostSessionRsvp {
     pub session_id: Uuid,
-    pub player_username: String,
+    pub player_user_id: Uuid,
     pub player_rsvp: String,
 }
 

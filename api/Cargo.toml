@@ -20,3 +20,7 @@ skillratings = "0.27.1"
 expo_push_notification_client = "0.5.0"
 axum-extra = { version = "0.9", features = ["typed-header"] } 
 thiserror = "1.0.66"
+
+twilio = "1.1.0"
+reqwest = { version = "0.12.9", features = ["json"] }
+random_name_generator = "0.3.6"

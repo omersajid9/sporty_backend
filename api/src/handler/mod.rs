@@ -10,6 +10,8 @@ pub mod search;
 pub mod session;
 pub mod game;
 pub mod notifications;
+pub mod follow;
+pub mod auth;
 
 pub async fn health_checker() -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     const MESSAGE: &str = "Simple CRUD API with Rust, SQLX, Postgres,and Axum";

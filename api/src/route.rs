@@ -3,19 +3,22 @@ use axum::{
 };
 use std::sync::Arc;
 
-use crate::{auth::require_auth, handler::{game::{confirm_score, get_match, report_score}, health_checker, notifications::{get_notifications, remove_notification_token, save_notification_token}, player::{delete_player, edit_player, get_player, sign_in, sign_up}, search::{explore_sessions, going_sessions, players, reportable_sessions, sports}, session::{create_session, delete_session, edit_session, get_session, rsvp_session, session_players}}, AppState};
+use crate::{auth::require_auth, handler::{auth::{log_in, refresh_token, send_opt_sms}, game::{confirm_score, get_match, report_score}, health_checker, notifications::{get_notifications, remove_notification_token, save_notification_token}, player::{delete_player, edit_player, get_player}, search::{explore_sessions, going_sessions, past_sessions, players, reportable_sessions, sports}, session::{create_session, delete_session, edit_session, get_session, rsvp_session, session_players}}, AppState};
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
     let non_protected = Router::new()
         .route("/health_checker", get(health_checker))
-        .nest("/auth", auth_router());
-
-    let protected = Router::new()
-        .nest("/player", player_router())
         .nest("/search", search_router())
+        .nest("/notification", notification_router())
+        .nest("/session", session_protected_router())
+        .nest("/auth", auth_router());
+    
+    let protected = Router::new()
+        .nest("/search", search_protected_router())
+        .nest("/player", player_router())
         .nest("/game", game_router())
         .nest("/session", session_router())
-        .nest("/notification", notification_router())
+        .nest("/notification", notification_protected_router())
         .layer(from_fn_with_state(app_state.clone(), require_auth));
 
     Router::new()
@@ -26,8 +29,11 @@ pub fn create_router(app_state: Arc<AppState>) -> Router {
 
 fn auth_router() -> Router<Arc<AppState>> {
     Router::new()
-        .route("/sign-in", post(sign_in))
-        .route("/sign-up", post(sign_up))
+        // .route("/sign-in", post(sign_in))
+        // .route("/sign-up", post(sign_up))
+        .route("/refresh-token", post(refresh_token))
+        .route("/send-opt-sms", post(send_opt_sms))
+        .route("/log-in", post(log_in))
 }
 
 fn player_router() -> Router<Arc<AppState>> {
@@ -37,19 +43,27 @@ fn player_router() -> Router<Arc<AppState>> {
         .route("/edit", patch(edit_player))
 }
 
+fn search_protected_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/going_sessions", get(going_sessions))
+        .route("/past_sessions", get(past_sessions))
+        .route("/reportable_sessions", get(reportable_sessions))
+}
+
 fn search_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/players", get(players))
         .route("/sports", get(sports))
         .route("/explore_sessions", get(explore_sessions))
-        .route("/going_sessions", get(going_sessions))
-        .route("/reportable_sessions", get(reportable_sessions))
 }
 
-fn session_router() -> Router<Arc<AppState>> {
+fn session_protected_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/:id", get(get_session))
         .route("/players", get(session_players))
+}
+fn session_router() -> Router<Arc<AppState>> {
+    Router::new()
         .route("/create", post(create_session))
         .route("/edit", patch(edit_session))
         .route("/delete", delete(delete_session))
@@ -63,12 +77,17 @@ fn game_router() -> Router<Arc<AppState>> {
         .route("/confirm", post(confirm_score))
 }
 
-fn notification_router() -> Router<Arc<AppState>> {
+fn notification_protected_router() -> Router<Arc<AppState>> {
     Router::new()
         .route("/report_token", post(save_notification_token))
-        .route("/remove_token", post(remove_notification_token))
         .route("/get", get(get_notifications))
 }
+fn notification_router() -> Router<Arc<AppState>> {
+    Router::new()
+        .route("/remove_token", post(remove_notification_token))
+}
+
+
 
 // fn player_router() -> Router<Arc<AppState>> {
 //     Router::new()

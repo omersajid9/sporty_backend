@@ -13,9 +13,7 @@ use crate::{
         game::{
             Game, GameData, Rating, Score, Team, TeamMember, TeamScore,
             UserDetails,
-        },
-        player::Player,
-        Username,
+        }, player::Player, ID, Username
     },
     schema::game::{PostConfirmScore, PostReportScore},
     AppState,
@@ -36,9 +34,9 @@ pub async fn get_match(
     .await
     .unwrap();
 
-    let usernames_team_1 = sqlx::query_as!(
+    let users_team_1 = sqlx::query_as!(
         UserDetails,
-        "SELECT p.username, p.profile_picture
+        "SELECT p.username, p.id, p.profile_picture
         FROM team_member tm
         INNER JOIN player p ON p.id = tm.player_id
         WHERE tm.team_id = $1",
@@ -48,9 +46,9 @@ pub async fn get_match(
     .await
     .unwrap();
 
-    let usernames_team_2 = sqlx::query_as!(
+    let users_team_2 = sqlx::query_as!(
         UserDetails,
-        "SELECT p.username, p.profile_picture
+        "SELECT p.username, p.id, p.profile_picture
         FROM team_member tm
         INNER JOIN player p ON p.id = tm.player_id
         WHERE tm.team_id = $1",
@@ -61,8 +59,8 @@ pub async fn get_match(
     .unwrap();
 
     let reporter = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE id = $1",
+        UserDetails,
+        "SELECT p.username, p.id, p.profile_picture FROM player p WHERE id = $1",
         game.reporter_id
     )
     .fetch_one(&data.db)
@@ -82,21 +80,21 @@ pub async fn get_match(
     .await
     .unwrap();
 
-    let usernames_1: Vec<String> = usernames_team_1
+    let users_1: Vec<Uuid> = users_team_1
         .iter()
-        .map(|u| u.username.clone())
+        .map(|u| u.id.clone())
         .collect();
-    let usernames_2: Vec<String> = usernames_team_2
+    let users_2: Vec<Uuid> = users_team_2
         .iter()
-        .map(|u| u.username.clone())
+        .map(|u| u.id.clone())
         .collect();
     let mut players = Vec::new();
-    players.extend(usernames_1);
-    players.extend(usernames_2);
+    players.extend(users_1);
+    players.extend(users_2);
 
     let accepted = sqlx::query_as!(
-        Username,
-        "SELECT p.username
+        ID,
+        "SELECT p.id
         FROM player p
         INNER JOIN score_validation sv ON sv.player_id = p.id
         WHERE sv.game_id = $1
@@ -107,12 +105,12 @@ pub async fn get_match(
     .await
     .unwrap()
     .iter()
-    .map(|u| u.username.clone())
+    .map(|u| u.id.clone())
     .collect();
 
     let total = sqlx::query_as!(
-        Username,
-        "SELECT p.username
+        ID,
+        "SELECT p.id
         FROM player p
         INNER JOIN score_validation sv ON sv.player_id = p.id
         WHERE sv.game_id = $1",
@@ -122,46 +120,15 @@ pub async fn get_match(
     .await
     .unwrap()
     .iter()
-    .map(|u| u.username.clone())
+    .map(|u| u.id.clone())
     .collect();
 
-    // let confirmations = sqlx::query_as!(
-    //     ScoreConfirmation,
-    //     "SELECT SUM(CASE WHEN sv.status = 'Yes' THEN 1 ELSE 0 END) as accepted, COUNT(DISTINCT sv.player_id) as total
-    //     FROM score_validation sv
-    //     WHERE sv.game_id = $1
-    //     GROUP BY sv.game_id",
-    //     id
-    // ).fetch_optional(&data.db)
-    // .await
-    // .unwrap();
-
-    // let (total, accepted) = if let Some(confirmation) = confirmations {
-    //     (confirmation.total.unwrap_or(0) + 1, confirmation.accepted.unwrap_or(0) + 1)
-    // } else {
-    //     (1, 1)
-    // };
-
-    // let total = confirmations.total.unwrap_or(0) + 1;
-    // let accepted = confirmations.accepted.unwrap_or(0) + 1;
 
     let game_data = GameData {
         id: id,
-        team_1_usernames: usernames_team_1
-            .iter()
-            .map(|u| UserDetails {
-                username: u.username.clone(),
-                profile_picture: u.profile_picture.clone(),
-            })
-            .collect(),
-        team_2_usernames: usernames_team_2
-            .iter()
-            .map(|u| UserDetails {
-                username: u.username.clone(),
-                profile_picture: u.profile_picture.clone(),
-            })
-            .collect(),
-        reporter_username: reporter.username,
+        team_1_users: users_team_1,
+        team_2_users: users_team_2,
+        reporter_user: reporter,
         scores: scores,
         total: total,
         players: players,
@@ -180,14 +147,14 @@ pub async fn report_score(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<PostReportScore>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let reporter = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.reporter_username.to_string()
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
+    // let reporter = sqlx::query_as!(
+    //     Player,
+    //     "SELECT * FROM player WHERE username = $1",
+    //     body.reporter_user_id.to_string()
+    // )
+    // .fetch_one(&data.db)
+    // .await
+    // .unwrap();
 
     for report in body.reports {
         let team_1 = sqlx::query_as!(
@@ -210,44 +177,28 @@ pub async fn report_score(
         .await
         .unwrap();
 
-        for username_t1 in report.team_1_usernames.clone() {
-            let player = sqlx::query_as!(
-                Player,
-                "SELECT * FROM player WHERE username = $1",
-                username_t1.to_string()
-            )
-            .fetch_one(&data.db)
-            .await
-            .unwrap();
+        for user_id_t1 in report.team_1_user_ids {
             let _ = sqlx::query_as!(
                 TeamMember,
                 "INSERT INTO
                 team_member (team_id, player_id)
                 VALUES ($1, $2)",
                 team_1.id,
-                player.id
+                user_id_t1
             )
             .execute(&data.db)
             .await
             .unwrap();
         }
 
-        for username_t2 in report.team_2_usernames.clone() {
-            let player = sqlx::query_as!(
-                Player,
-                "SELECT * FROM player WHERE username = $1",
-                username_t2.to_string()
-            )
-            .fetch_one(&data.db)
-            .await
-            .unwrap();
+        for user_id_t2 in report.team_2_user_ids.clone() {
             let _ = sqlx::query_as!(
                 TeamMember,
                 "INSERT INTO
                 team_member (team_id, player_id)
                 VALUES ($1, $2)",
                 team_2.id,
-                player.id
+                user_id_t2
             )
             .execute(&data.db)
             .await
@@ -263,7 +214,7 @@ pub async fn report_score(
             report.session_id,
             team_1.id,
             team_2.id,
-            reporter.id
+            body.reporter_user_id
         )
         .fetch_one(&data.db)
         .await
@@ -311,15 +262,6 @@ pub async fn confirm_score(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<PostConfirmScore>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.username.to_string()
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
     let game = sqlx::query_as!(
         Game,
         "SELECT *
@@ -345,7 +287,7 @@ pub async fn confirm_score(
     .await
     .unwrap();
 
-    let contains_player = players_no_confirmation.iter().any(|x| x.id == player.id);
+    let contains_player = players_no_confirmation.iter().any(|x| x.id == body.user_id.clone());
 
     let accepted: Vec<String> = sqlx::query_as!(
         Username,
@@ -414,7 +356,7 @@ pub async fn confirm_score(
         VALUES ($1, $2, $3)
         ",
         game.id,
-        player.id,
+        body.user_id,
         body.confirmation.clone()
     )
     .execute(&data.db)

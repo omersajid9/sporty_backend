@@ -261,19 +261,10 @@ pub async fn get_notifications(
     State(data): State<Arc<AppState>>,
     axum::extract::Query(body): axum::extract::Query<GetNotification>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.username
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
     let notifications = sqlx::query_as!(
         Notification,
         "SELECT * FROM notification WHERE player_id = $1 ORDER BY created_at DESC",
-        player.id
+        body.user_id
     )
     .fetch_all(&data.db)
     .await
@@ -289,15 +280,6 @@ pub async fn save_notification_token(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<PostNotificationToken>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.username
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
     let _ = sqlx::query_as!(
         NotificationToken,
         "DELETE FROM
@@ -315,7 +297,7 @@ pub async fn save_notification_token(
         notification_token (player_id, token)
         VALUES ($1, $2)
         ON CONFLICT (player_id, token) DO NOTHING",
-        player.id,
+        body.user_id,
         body.token
     )
     .execute(&data.db)
@@ -331,21 +313,12 @@ pub async fn remove_notification_token(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<PostNotificationToken>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.username
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
     let _ = sqlx::query_as!(
         NotificationToken,
         "DELETE FROM
         notification_token 
         WHERE player_id = $1 AND token = $2",
-        player.id,
+        body.user_id,
         body.token
     )
     .execute(&data.db)
@@ -357,35 +330,3 @@ pub async fn remove_notification_token(
         Json(json!({"status": "success", "message": "Notification token saved successfully"})),
     ))
 }
-
-pub async fn _remove_notification_token(
-    State(data): State<Arc<AppState>>,
-    axum::extract::Json(body): axum::extract::Json<PostNotificationToken>,
-) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    let player = sqlx::query_as!(
-        Player,
-        "SELECT * FROM player WHERE username = $1",
-        body.username
-    )
-    .fetch_one(&data.db)
-    .await
-    .unwrap();
-
-    let _ = sqlx::query_as!(
-        NotificationToken,
-        "DELETE FROM
-        notification_token 
-        WHERE player_id = $1 AND token = $2",
-        player.id,
-        body.token
-    )
-    .execute(&data.db)
-    .await
-    .unwrap();
-
-    Ok((
-        StatusCode::OK,
-        Json(json!({"status": "success", "message": "Notification token saved successfully"})),
-    ))
-}
-

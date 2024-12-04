@@ -11,7 +11,11 @@ use uuid::Uuid;
 pub struct Player {
     pub id: Uuid,
     pub username: String,
-    pub password: String,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub password: Option<String>,
+    pub auth_type: String,
+    pub auth_id: String,
     pub profile_picture: String
 }
 
