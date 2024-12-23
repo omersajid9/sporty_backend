@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use uuid::Uuid;
 
+use super::search::Sport;
+
 
 #[derive(Debug, FromRow, Deserialize, Serialize)]
 #[allow(non_snake_case)]
@@ -48,6 +50,7 @@ pub struct GameData {
     pub team_1_users: Vec<UserDetails>,
     pub team_2_users: Vec<UserDetails>,
     pub reporter_user: UserDetails,
+    pub sport: Sport,
     pub scores: Vec<TeamScore>,
     pub status: String,
     pub players: Vec<Uuid>,

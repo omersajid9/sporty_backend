@@ -7,9 +7,7 @@ use uuid::Uuid;
 use crate::{
     auth::Claims,
     model::{
-        game::{Game, GameData, TeamScore, UserDetails},
-        player::{Player, RatingData},
-        Username, ID,
+        game::{Game, GameData, TeamScore, UserDetails}, player::{Player, RatingData}, search::Sport, Username, ID
     },
     schema::player::*,
     AppState,
@@ -233,9 +231,21 @@ pub async fn get_player(
     .await
     .unwrap();
 
-    let mut games_data: Vec<GameData> = Vec::new();
 
-    for game in games {
+let mut games_data: Vec<GameData> = Vec::new();
+
+for game in games {
+        let sport = sqlx::query_as!(
+            Sport,
+            "SELECT * 
+            FROM sport
+            WHERE id = (SELECT sport_id FROM session WHERE id = $1)",
+            game.id
+        ).fetch_one(&data.db)
+        .await
+        .unwrap();
+
+    
         let users_team_1 = sqlx::query_as!(
             UserDetails,
             "SELECT p.username, p.id, p.profile_picture
@@ -335,6 +345,7 @@ pub async fn get_player(
             team_1_users: users_team_1,
             team_2_users: users_team_2,
             reporter_user: reporter,
+            sport: sport,
             total: total,
             players: players,
             accepted: accepted,

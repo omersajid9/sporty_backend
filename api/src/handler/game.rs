@@ -13,7 +13,7 @@ use crate::{
         game::{
             Game, GameData, Rating, Score, Team, TeamMember, TeamScore,
             UserDetails,
-        }, player::Player, ID, Username
+        }, player::Player, search::Sport, Username, ID
     },
     schema::game::{PostConfirmScore, PostReportScore},
     AppState,
@@ -31,6 +31,14 @@ pub async fn get_match(
         id
     )
     .fetch_one(&data.db)
+    .await
+    .unwrap();
+
+    let sport = sqlx::query_as!(
+        Sport,
+        "SELECT * FROM sport WHERE id = (SELECT sport_id FROM session WHERE id = $1)",
+        game.id
+    ).fetch_one(&data.db)
     .await
     .unwrap();
 
@@ -123,12 +131,23 @@ pub async fn get_match(
     .map(|u| u.id.clone())
     .collect();
 
+    let sport = sqlx::query_as!(
+        Sport,
+        "SELECT * 
+        FROM sport
+        WHERE id = (SELECT sport_id FROM session WHERE id = $1)",
+        id
+    ).fetch_one(&data.db)
+    .await
+    .unwrap();
+
 
     let game_data = GameData {
         id: id,
         team_1_users: users_team_1,
         team_2_users: users_team_2,
         reporter_user: reporter,
+        sport: sport,
         scores: scores,
         total: total,
         players: players,
