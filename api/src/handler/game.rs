@@ -37,7 +37,7 @@ pub async fn get_match(
     let sport = sqlx::query_as!(
         Sport,
         "SELECT * FROM sport WHERE id = (SELECT sport_id FROM session WHERE id = $1)",
-        game.id
+        game.session_id
     ).fetch_one(&data.db)
     .await
     .unwrap();
@@ -130,16 +130,6 @@ pub async fn get_match(
     .iter()
     .map(|u| u.id.clone())
     .collect();
-
-    let sport = sqlx::query_as!(
-        Sport,
-        "SELECT * 
-        FROM sport
-        WHERE id = (SELECT sport_id FROM session WHERE id = $1)",
-        game.session_id
-    ).fetch_one(&data.db)
-    .await
-    .unwrap();
 
 
     let game_data = GameData {
