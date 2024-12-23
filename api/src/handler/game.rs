@@ -136,7 +136,7 @@ pub async fn get_match(
         "SELECT * 
         FROM sport
         WHERE id = (SELECT sport_id FROM session WHERE id = $1)",
-        id
+        game.session_id
     ).fetch_one(&data.db)
     .await
     .unwrap();

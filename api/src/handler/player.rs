@@ -240,7 +240,7 @@ for game in games {
             "SELECT * 
             FROM sport
             WHERE id = (SELECT sport_id FROM session WHERE id = $1)",
-            game.id
+            game.session_id
         ).fetch_one(&data.db)
         .await
         .unwrap();
