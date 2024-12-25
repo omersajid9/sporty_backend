@@ -12,6 +12,8 @@ use crate::{
 };
 use rnglib::{Language, RNG};
 
+use super::player::get_available_username;
+
 pub async fn send_opt_sms(
     axum::extract::Json(body): axum::extract::Json<SendOptSms>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
@@ -51,7 +53,7 @@ pub async fn log_in(
             // Handle existing players based on auth type
             match body.auth_type.to_lowercase().as_str() {
                 "apple" => player,
-                "email" => {
+                "username" => {
                     if let (Some(password), Some(try_password)) = (player.password.clone(), body.passcode.clone()) {
                         if password != try_password {
                             return Err((
@@ -93,17 +95,16 @@ pub async fn log_in(
             }
         }
         None => {
-            // Generate new username
-            let mut rng = RNG::try_from(&Language::Fantasy).unwrap();
-            let first_name = rng.generate_short().to_lowercase();
-            rng = RNG::try_from(&Language::Elven).unwrap();
-            let last_name = rng.generate_short().to_lowercase();
-            let username = format!("{}_{}", first_name, last_name);
-
             // Insert new player into database
             match body.auth_type.to_lowercase().as_str() {
                 "apple" | "phone" => {
                     if body.auth_type == "phone" {
+                        let mut rng = RNG::try_from(&Language::Fantasy).unwrap();
+                        let first_name = rng.generate_short().to_lowercase();
+                        rng = RNG::try_from(&Language::Elven).unwrap();
+                        let last_name = rng.generate_short().to_lowercase();
+                        let username = format!("{}_{}", first_name, last_name);            
+
                         if let Some(opt) = body.passcode.clone() {
                             let verify = TwilioService::verify_otp(&body.auth_id, &opt).await;
                             if verify.is_err() {
@@ -131,14 +132,17 @@ pub async fn log_in(
                         .await
                         .unwrap()
                     } else {
+                        let mut username = body.auth_id.clone();
+                        username = username.split("@").collect::<Vec<&str>>()[0].to_string();
+                        username = get_available_username(data.clone(), username).await;
                         sqlx::query_as!(
                             Player,
                             "INSERT INTO player (username, first_name, last_name, auth_type, auth_id)
                              VALUES ($1, $2, $3, $4, $5)
                              RETURNING *",
                             username,
-                            body.first_name.unwrap_or("".to_string()),
-                            body.last_name.unwrap_or("".to_string()),
+                            body.first_name,
+                            body.last_name,
                             body.auth_type,
                             body.auth_id
                         )
@@ -146,19 +150,17 @@ pub async fn log_in(
                         .await
                         .unwrap()
                     }
-
                 }
-                "email" => {
+                "username" => {
                     if let Some(password) = body.passcode.clone() {
                         sqlx::query_as!(
                             Player,
                             "INSERT INTO player (username, password, auth_type, auth_id)
-                             VALUES ($1, $2, $3, $4)
+                             VALUES ($1, $2, $3, $1)
                              RETURNING *",
-                            username,
+                            body.auth_id,
                             password,
-                            body.auth_type,
-                            body.auth_id
+                            body.auth_type
                         )
                         .fetch_one(&data.db)
                         .await

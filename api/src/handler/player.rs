@@ -102,6 +102,35 @@ use crate::{
 //     }
 // }
 
+pub async fn get_available_username(
+    data: Arc<AppState>,
+    username: String
+) -> String {
+    
+    let mut initial_username = username.clone();
+    let mut i = 1;
+    while !is_username_available(data.clone(), initial_username.clone()).await {
+        initial_username = format!("{}{}", username, i);
+        i += 1;
+    }
+    initial_username
+}
+
+pub async fn is_username_available(
+    data: Arc<AppState>,
+    username: String
+) -> bool {
+    let result = sqlx::query!(
+        "SELECT COUNT(*) FROM player WHERE username = $1",
+        username
+    )
+    .fetch_one(&data.db)
+    .await
+    .unwrap();
+
+    result.count == Some(0)
+}
+
 pub async fn delete_player(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<DeletePlayer>,
@@ -131,16 +160,34 @@ pub async fn edit_player(
     State(data): State<Arc<AppState>>,
     axum::extract::Json(body): axum::extract::Json<EditPlayer>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let existing_player = sqlx::query_as!(
+        Player,
+        "SELECT * FROM player WHERE id = $1",
+        body.user_id
+    ).fetch_one(&data.db)
+    .await
+    .unwrap();
 
     if let Some(username) = body.username {
-        let res = sqlx::query_as!(
-            Player,
-            "UPDATE player SET username = $1 WHERE id = $2",
-            username,
-            body.user_id
-        )
-        .execute(&data.db)
-        .await;
+        let res = if existing_player.auth_type == "username" {
+            sqlx::query_as!(
+                Player,
+                "UPDATE player SET username = $1, auth_id = $1 WHERE id = $2",
+                username,
+                body.user_id
+            )
+            .execute(&data.db)
+            .await
+        } else {
+            sqlx::query_as!(
+                Player,
+                "UPDATE player SET username = $1 WHERE id = $2",
+                username,
+                body.user_id
+            )
+            .execute(&data.db)
+            .await
+        };
 
         if res.is_err() {
             let error_response = json!({"status": "error", "message": "username already taken"});

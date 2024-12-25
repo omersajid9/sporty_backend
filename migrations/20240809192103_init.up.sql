@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS earthdistance;
 create table
 if not exists player (
     id UUID PRIMARY KEY NOT NULL DEFAULT (uuid_generate_v4()),
-    username varchar(50) unique not null,
+    username text unique not null,
     first_name varchar(100),
     last_name varchar(100),
     password text, -- yes, no, no
@@ -18,18 +18,18 @@ if not exists player (
 
 insert into
 player (username, password, auth_type, auth_id, profile_picture)
-values ('omersajid', 'a', 'email', 'omersajid', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV22.png');
+values ('omersajid', 'a', 'username', 'omersajid', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV22.png');
 
 insert into
 player (username, password, auth_type, auth_id, profile_picture)
-values ('omer', 'a', 'email', 'omer', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV23.png');
+values ('omer', 'a', 'username', 'omer', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV23.png');
 insert into
 player (username, password, auth_type, auth_id, profile_picture)
-values ('omers', 'a', 'email', 'omers', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV10.png');
+values ('omers', 'a', 'username', 'omers', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV10.png');
 
 insert into
 player (username, password, auth_type, auth_id, profile_picture)
-values ('omersa', 'a', 'email', 'omersa', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV5.png');
+values ('omersa', 'a', 'username', 'omersa', 'https://mact-profile-avatar.s3.us-east-1.amazonaws.com/images/id/AV5.png');
 
 
 create table
