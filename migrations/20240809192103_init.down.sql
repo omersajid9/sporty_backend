@@ -1,12 +1,17 @@
 -- Add down migration script here
 
--- drop table if exists player_score;
-drop table if exists player_game;
+-- drop type session_player_rsvp cascade;
+drop table if exists follow;
+drop table if exists notification;
+drop table if exists notification_token;
+drop table if exists score_validation;
+drop table if exists score;
+drop table if exists session_rsvp;
 drop table if exists game;
+drop table if exists team_member;
+drop table if exists team;
+drop table if exists session;
 drop table if exists rating;
-drop table if exists player_sport;
 drop table if exists sport;
--- drop table if exists friendship;
 drop table if exists player;
--- drop type friendship_status;
 -- drop type player_game_rsvp;
